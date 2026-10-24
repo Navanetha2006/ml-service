@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tumour Classifier</title>
+<style>
+:root{--p:#ff2e93;--c:#00e5ff;--y:#ffe600;--g:#7dff6b;--k:#05050a;--pn:rgba(10,10,22,.88)}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--k);color:#fff;font:16px/1.55 "Segoe UI",system-ui,Arial,sans-serif;overflow-x:hidden}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;opacity:.55;mix-blend-mode:overlay;background:radial-gradient(rgba(255,255,255,.22) 1px,transparent 1.6px) 0 0/7px 7px}
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0}
+nav{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;gap:6px;padding:10px 16px;background:linear-gradient(#05050aee,#05050a00)}
+nav b{font:900 20px Impact,"Arial Black",sans-serif;letter-spacing:.04em;margin-right:auto;color:var(--y);text-shadow:3px 3px 0 var(--p)}
+nav a{color:#fff;text-decoration:none;font:800 13px "Arial Black",Arial,sans-serif;padding:8px 12px;border:2px solid transparent;transform:skew(-8deg);transition:.15s}
+nav a:hover{border-color:var(--c);color:var(--c)}nav a.act{background:var(--y);color:#000;box-shadow:4px 4px 0 var(--p)}
+main{position:relative;z-index:10;max-width:1040px;margin:0 auto;padding:84px 16px 40px}
+.page{display:none}.page.on{display:block;animation:wipe .65s cubic-bezier(.7,0,.2,1)}
+@keyframes wipe{from{clip-path:polygon(0 0,0 0,-35% 100%,0 100%)}to{clip-path:polygon(0 0,135% 0,100% 100%,0 100%)}}
+.h{font:900 clamp(38px,8vw,92px)/.95 Impact,"Arial Black",sans-serif;text-transform:uppercase;margin:0;position:relative;letter-spacing:.01em;text-shadow:5px 5px 0 var(--p)}
+.h.s{font-size:clamp(30px,5vw,52px);margin-bottom:18px}
+.glitch::before,.glitch::after{content:attr(data-t);position:absolute;left:0;top:0;width:100%;overflow:hidden;text-shadow:none}
+.glitch::before{color:var(--c);transform:translate(-4px,0);animation:gl 2.6s infinite steps(1)}
+.glitch::after{color:var(--y);transform:translate(4px,0);animation:gl 2.1s infinite steps(1) reverse}
+@keyframes gl{0%{clip-path:inset(0 0 92% 0)}10%{clip-path:inset(40% 0 40% 0)}20%{clip-path:inset(80% 0 0 0)}30%,100%{clip-path:inset(0 0 100% 0)}50%{clip-path:inset(20% 0 60% 0)}70%{clip-path:inset(60% 0 20% 0)}}
+.tag{display:inline-block;background:var(--y);color:#000;font:900 15px "Arial Black",Arial;padding:6px 14px;transform:rotate(-2deg);box-shadow:4px 4px 0 var(--c);margin:16px 0}
+.btns{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px}
+.btn{font:900 16px "Arial Black",Arial;padding:14px 26px;color:#000;background:var(--p);border:3px solid #fff;box-shadow:6px 6px 0 var(--c);cursor:pointer;text-decoration:none;transform:skew(-6deg);transition:.12s}
+.btn.b{background:var(--c);box-shadow:6px 6px 0 var(--p)}
+.btn:hover{transform:skew(-6deg) translate(-3px,-3px);box-shadow:10px 10px 0 var(--y)}.btn:active{transform:skew(-6deg) translate(3px,3px);box-shadow:2px 2px 0 var(--y)}
+.btn:disabled{opacity:.6;cursor:wait}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:22px;margin-top:26px}
+.pn{background:var(--pn);border:3px solid #fff;padding:20px;box-shadow:7px 7px 0 var(--p);transform:rotate(-.7deg);transition:.2s}
+.pn:nth-child(even){box-shadow:7px 7px 0 var(--c);transform:rotate(.7deg)}
+.pn:hover{transform:rotate(0) translate(-3px,-3px);box-shadow:11px 11px 0 var(--y)}
+.pn h3{margin:0 0 8px;font:900 22px Impact,"Arial Black",sans-serif;text-transform:uppercase;color:var(--y)}
+.pn p{margin:0;color:#d8dcf5}
+.big{font:900 54px/1 Impact,"Arial Black",sans-serif;color:var(--c);text-shadow:3px 3px 0 var(--p)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:24px}@media(max-width:760px){.two{grid-template-columns:1fr}}
+.pre{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.pre button{font:800 12px "Arial Black",Arial;background:#000;color:#fff;border:2px solid var(--c);padding:7px 12px;cursor:pointer;transition:.12s}
+.pre button:hover{background:var(--c);color:#000;transform:translateY(-2px)}
+.f{margin-top:16px}.f .r{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.f label{font-weight:700;font-size:14px}.f small{color:#8f97c0;font-weight:400;margin-left:6px}
+.num{width:88px;text-align:right;padding:5px 8px;font:inherit;color:#fff;background:#000;border:2px solid #fff}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:8px;background:linear-gradient(90deg,var(--p) var(--v,50%),#2a2a40 var(--v,50%));cursor:pointer;transform:skew(-10deg)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;background:var(--y);border:3px solid #000;box-shadow:3px 3px 0 var(--c)}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;background:var(--y);border:3px solid #000;border-radius:0}
+:focus-visible{outline:3px solid var(--y);outline-offset:3px}
+#out{min-height:210px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px}
+.burst{width:230px;height:230px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#000;animation:pop .6s cubic-bezier(.2,1.6,.4,1) both;transform:rotate(-6deg)}
+.burst.benign{background:var(--g)}.burst.malignant{background:var(--p)}
+.burst b{font:900 34px Impact,"Arial Black",sans-serif;text-transform:uppercase}.burst span{font:900 24px "Arial Black",Arial}
+@keyframes pop{from{transform:scale(0) rotate(40deg)}}
+.br{display:grid;grid-template-columns:78px 1fr 52px;gap:8px;align-items:center;width:100%;font-size:13px;text-align:left}
+.br i{height:12px;background:#222238;border:2px solid #fff;display:block}.br em{display:block;height:100%;width:0;transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.err{color:var(--p);font:800 17px Arial;animation:sh .5s}
+@keyframes sh{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.bar{margin:14px 0}.bar div{height:22px;border:3px solid #fff;background:#15152a}
+.bar em{display:block;height:100%;background:linear-gradient(90deg,var(--p),var(--y));width:0}
+.page.on .bar em{animation:grow 1.3s .3s cubic-bezier(.2,.8,.2,1) both}
+@keyframes grow{to{width:var(--w)}}
+.step{counter-increment:s}.step h3::before{content:counter(s);display:inline-block;background:var(--p);color:#000;width:34px;height:34px;line-height:34px;text-align:center;margin-right:10px;transform:rotate(-8deg)}
+#steps{counter-reset:s}
+#seq{width:100%;padding:12px;font:800 20px monospace;background:#000;color:#fff;border:3px solid var(--c);letter-spacing:.2em;text-transform:uppercase}
+#comp{font:900 28px monospace;letter-spacing:.2em;word-break:break-all;margin-top:12px;min-height:40px}
+#comp span{display:inline-block;animation:pop .35s both}
+.note{margin-top:30px;text-align:center;color:#8f97c0;font-size:12px}
+#spec{display:block;width:100%;height:270px;background:#000;border:3px solid #fff;margin-bottom:14px;box-shadow:inset 0 0 40px rgba(0,229,255,.15)}
+#spec.shake{animation:sh .5s}
+.av{width:68px;height:68px;display:flex;align-items:center;justify-content:center;font:900 28px Impact,"Arial Black",sans-serif;color:#000;background:var(--y);border:3px solid #fff;box-shadow:4px 4px 0 var(--p);transform:rotate(-6deg);margin-bottom:14px}
+.pn:nth-child(2) .av{background:var(--c);box-shadow:4px 4px 0 var(--y)}.pn:nth-child(3) .av{background:var(--g);box-shadow:4px 4px 0 var(--c)}
+.roll{display:inline-block;margin-top:8px;padding:3px 10px;background:#000;border:2px solid var(--c);color:var(--c);font:800 13px monospace}
+.foot{margin-top:46px;text-align:center;font:800 13px "Arial Black",Arial;color:#cfd4f5}.foot span{color:var(--y)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<canvas id="bg" aria-hidden="true"></canvas>
+<nav><b>DNA//LAB</b><a href="#home">Home</a><a href="#predict">Predict</a><a href="#dna">DNA</a><a href="#model">Model</a></nav>
+<main>
+
+<section class="page" id="home">
+  <div style="min-height:62vh;display:flex;flex-direction:column;justify-content:center">
+    <h1 class="h glitch" data-t="Tumour Classifier">Tumour Classifier</h1>
+    <div><span class="tag">SPIN THE HELIX. SCAN THE CELL. PREDICT.</span></div>
+    <p style="max-width:44ch;color:#d8dcf5">A small machine learning service that looks at five measurements of a cell nucleus and says whether the tumour looks benign or malignant.</p>
+    <div class="btns"><a class="btn" href="#predict">Run a scan</a><a class="btn b" href="#dna">Explore DNA</a></div>
+  </div>
+  <div class="grid">
+    <div class="pn"><div class="big" data-n="569">0</div><h3>Cells measured</h3><p>Samples in the Wisconsin breast cancer dataset.</p></div>
+    <div class="pn"><div class="big" data-n="5">0</div><h3>Measurements</h3><p>Radius, texture, perimeter, area, smoothness.</p></div>
+    <div class="pn"><div class="big" data-n="14">0</div><h3>Tests passing</h3><p>Valid, invalid, missing and incompatible cases.</p></div>
+  </div>
+  <h2 class="h s" style="margin-top:56px">The crew</h2>
+  <div class="grid">
+    <div class="pn"><div class="av">MN</div><h3>M Navanetha</h3><span class="roll">24aiml34</span></div>
+    <div class="pn"><div class="av">FF</div><h3>M Felix Francis</h3><span class="roll">24aiml33</span></div>
+    <div class="pn"><div class="av">ME</div><h3>Melwyn Ezekiel</h3><span class="roll">24aiml35</span></div>
+  </div>
+</section>
+
+<section class="page" id="predict">
+  <h2 class="h s">Scan a cell</h2>
+  <div class="two">
+    <div class="pn">
+      <h3>Measurements</h3>
+      <div class="pre"><button onclick="preset('avg')">Average</button><button onclick="preset('small')">Small + smooth</button><button onclick="preset('large')">Large + rough</button></div>
+      <div id="fields"></div>
+      <div class="btns"><button class="btn" id="go" onclick="predict()">Run scan</button></div>
+    </div>
+    <div class="pn"><h3>Live specimen</h3><canvas id="spec" aria-label="Cell preview that changes with the sliders"></canvas><div id="out" aria-live="polite"><p style="color:#8f97c0;max-width:30ch">Pick a preset or move the sliders, then run the scan.</p></div></div>
+  </div>
+</section>
+
+<section class="page" id="dna">
+  <h2 class="h s glitch" data-t="What is DNA?">What is DNA?</h2>
+  <div class="grid">
+    <div class="pn"><h3>The double helix</h3><p>Two long strands twisted around each other, about 2 nanometres wide. It looks like a twisted ladder, like the one behind this page.</p></div>
+    <div class="pn"><h3>Four letters</h3><p>The code uses A, T, C and G. A always pairs with T, and C always pairs with G, so each strand predicts the other.</p></div>
+    <div class="pn"><h3>Huge, but tiny</h3><p>A human genome has roughly 3 billion base pairs and about 20,000 protein-coding genes. Stretched out, the DNA in one cell is around 2 metres long.</p></div>
+    <div class="pn"><h3>When it goes wrong</h3><p>Cancer starts when mutations pile up in genes that control growth, so cells keep dividing when they should stop.</p></div>
+  </div>
+  <div class="pn" style="margin-top:28px"><h3>Build the other strand</h3><p style="margin-bottom:10px">Type a DNA sequence (A, T, C, G) and see its matching strand.</p>
+    <input id="seq" value="ATGCCGTA" maxlength="28" aria-label="DNA sequence"><div id="comp"></div></div>
+  <div class="pn" style="margin-top:28px"><h3>Does this project read DNA?</h3><p>No. The model never sees genes. It uses measurements taken from images of cell nuclei, such as size and edge roughness. Shape is a clue, not a diagnosis.</p></div>
+</section>
+
+<section class="page" id="model">
+  <h2 class="h s">Under the hood</h2>
+  <div class="pn"><h3>Model comparison (5-fold CV, F1)</h3>
+    <div class="bar"><p style="margin:0 0 4px">Logistic Regression: 0.955 (winner)</p><div><em style="--w:95.5%"></em></div></div>
+    <div class="bar"><p style="margin:0 0 4px">KNN: 0.946</p><div><em style="--w:94.6%"></em></div></div>
+    <div class="bar"><p style="margin:0 0 4px">Random Forest: 0.943</p><div><em style="--w:94.3%"></em></div></div>
+  </div>
+  <div class="grid">
+    <div class="pn"><div class="big">0.86</div><h3>Test accuracy</h3><p>On 114 unseen cells.</p></div>
+    <div class="pn"><div class="big">0.94</div><h3>Precision</h3><p>When it says benign, it is right 94% of the time.</p></div>
+    <div class="pn"><div class="big">0.83</div><h3>Recall</h3><p>It finds 83% of the truly benign cells.</p></div>
+  </div>
+  <div class="grid" id="steps">
+    <div class="pn step"><h3>Split first</h3><p>80% train, 20% test, before anything is fitted. This prevents leakage.</p></div>
+    <div class="pn step"><h3>Scale</h3><p>StandardScaler sits inside a pipeline, so it learns from training data only.</p></div>
+    <div class="pn step"><h3>Compare</h3><p>Three models, scored by cross-validation on the training set.</p></div>
+    <div class="pn step"><h3>Test once</h3><p>The winner meets the test set a single time.</p></div>
+    <div class="pn step"><h3>Serve</h3><p>FastAPI validates input (422) and checks the model files (503).</p></div>
+  </div>
+  <p class="note">The test set is small, so scores wobble between splits. Learning project, not a medical tool.</p>
+</section>
+<p class="foot">Built by <span>M Navanetha (24aiml34)</span> · <span>M Felix Francis (24aiml33)</span> · <span>Melwyn Ezekiel (24aiml35)</span></p>
+</main>
+
+<script>
+const $=s=>document.querySelector(s),reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* ---- routing ---- */
+const pages=['home','predict','dna','model'];let dim=1;
+function route(){let h=location.hash.slice(1);if(!pages.includes(h))h='home';
+ pages.forEach(p=>$('#'+p).classList.toggle('on',p===h));
+ document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('act',a.getAttribute('href')==='#'+h));
+ dim=h==='home'?1:.4;scrollTo(0,0);if(h==='predict')fitSpec();
+ if(h==='home')document.querySelectorAll('[data-n]').forEach(e=>{const n=+e.dataset.n,t0=performance.now();(function s(x){const k=Math.min(1,(x-t0)/1200);e.textContent=Math.round(n*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(s)})(t0)})}
+addEventListener('hashchange',route);
+/* ---- sliders ---- */
+const F=[
+ {id:'mean_radius',l:'Mean radius',h:'centre to edge',min:6,max:30,st:.1,v:14.1},
+ {id:'mean_texture',l:'Mean texture',h:'grey variation',min:9,max:40,st:.1,v:19.3},
+ {id:'mean_perimeter',l:'Mean perimeter',h:'boundary',min:40,max:190,st:.5,v:92},
+ {id:'mean_area',l:'Mean area',h:'size',min:140,max:2500,st:5,v:654},
+ {id:'mean_smoothness',l:'Mean smoothness',h:'edge variation',min:.05,max:.17,st:.001,v:.096}];
+const P={avg:[14.1,19.3,92,654,.096],small:[11,15,70,380,.09],large:[20,24,135,1200,.11]};
+const dec=f=>f.st<.01?3:f.st<1?1:0,fill=r=>r.style.setProperty('--v',(r.value-r.min)/(r.max-r.min)*100+'%');
+F.forEach(f=>{const d=document.createElement('div');d.className='f';
+ d.innerHTML=`<div class="r"><label for="n_${f.id}">${f.l}<small>${f.h}</small></label><input class="num" type="number" id="n_${f.id}" min="${f.min}" max="${f.max}" step="${f.st}" value="${f.v}"></div><input type="range" id="r_${f.id}" aria-label="${f.l}" min="${f.min}" max="${f.max}" step="${f.st}" value="${f.v}">`;
+ $('#fields').appendChild(d);const n=d.querySelector('.num'),r=d.querySelector('[type=range]');fill(r);
+ r.oninput=()=>{n.value=r.value;fill(r)};n.oninput=()=>{r.value=n.value;fill(r)}});
+const read=()=>F.map(f=>parseFloat($('#n_'+f.id).value));
+function set(a){F.forEach((f,i)=>{const n=$('#n_'+f.id),r=$('#r_'+f.id);n.value=(+a[i]).toFixed(dec(f));r.value=a[i];fill(r)})}
+function preset(k){const from=read().map((v,i)=>isNaN(v)?F[i].v:v),to=P[k];if(reduce){set(to);return predict()}
+ const t0=performance.now();(function s(n){const q=Math.min(1,(n-t0)/600),e=1-Math.pow(1-q,3);set(from.map((a,i)=>a+(to[i]-a)*e));if(q<1)requestAnimationFrame(s);else predict()})(t0)}
+/* ---- predict ---- */
+let tint=null;const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function fail(m){tint=null;$('#out').innerHTML=`<p class="err">${m}</p>`}
+async function predict(){const b=$('#go');b.disabled=true;b.textContent='Scanning…';scanning=true;scanT=performance.now();
+ const body={};F.forEach((f,i)=>body[f.id]=read()[i]);$('#out').innerHTML='<p style="font:900 22px Impact,Arial">SCANNING…</p>';
+ try{const[res]=await Promise.all([fetch('/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),sleep(reduce?0:1600)]);
+  const d=await res.json();scanning=false;
+  if(!res.ok)return fail(typeof d.detail==='string'?d.detail:'Every box needs a valid number inside its range.');
+  const ben=d.label==='benign',pc=d.probability*100,pb=ben?pc:100-pc;tint=ben?'ok':'bad';
+  $('#out').innerHTML=`<div class="burst ${d.label}" id="bu"><b>${ben?'Benign':'Malignant'}</b><span id="cnt">0%</span></div>
+  <div class="br"><span>Benign</span><i><em id="b1" style="background:var(--g)"></em></i><span>${pb.toFixed(1)}%</span></div>
+  <div class="br"><span>Malignant</span><i><em id="b2" style="background:var(--p)"></em></i><span>${(100-pb).toFixed(1)}%</span></div>`;
+  const pts=[];for(let i=0;i<28;i++){const r=i%2?36:50,a=i/28*6.283;pts.push(`${50+r*Math.cos(a)}% ${50+r*Math.sin(a)}%`)}
+  $('#bu').style.clipPath=`polygon(${pts.join(',')})`;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{$('#b1').style.width=pb+'%';$('#b2').style.width=(100-pb)+'%'}));
+  const t0=performance.now();(function s(n){const q=Math.min(1,(n-t0)/1100);$('#cnt').textContent=(pc*(1-Math.pow(1-q,3))).toFixed(1)+'%';if(q<1)requestAnimationFrame(s)})(t0);
+  if(!ben){sc.classList.remove('shake');void sc.offsetWidth;sc.classList.add('shake')}
+ }catch(e){fail('Cannot reach the server. Start it and try again.')}
+ finally{scanning=false;b.disabled=false;b.textContent='Run scan'}}
+/* ---- DNA complement ---- */
+const CP={A:'T',T:'A',C:'G',G:'C'},CL={A:'#ff2e93',T:'#00e5ff',C:'#ffe600',G:'#7dff6b'};
+function comp(){const s=$('#seq').value.toUpperCase().replace(/[^ATCG]/g,'');
+ $('#comp').innerHTML=[...s].map((c,i)=>`<span style="color:${CL[CP[c]]};animation-delay:${i*40}ms">${CP[c]}</span>`).join('')}
+$('#seq').oninput=comp;comp();
+/* ---- helix canvas ---- */
+const cv=$('#bg'),x=cv.getContext('2d');let W,H,cxp=.5,al=1,mx=0;
+function fit(){const d=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;cv.width=W*d;cv.height=H*d;x.setTransform(d,0,0,d,0,0)}
+addEventListener('resize',()=>{fit();fitSpec()});addEventListener('pointermove',e=>{mx=e.clientX/W-.5});fit();
+const hue=(t,T)=>tint==='ok'?140+t*70:tint==='bad'?335+t*50:(t*330+T/40)%360;
+function flower(px,py,s,h){x.save();x.translate(px,py);for(let j=0;j<6;j++){x.rotate(1.047);x.fillStyle=`hsl(${h},90%,68%)`;x.beginPath();x.ellipse(s*.6,0,s*.6,s*.32,0,0,6.283);x.fill()}x.fillStyle='#ffe600';x.beginPath();x.arc(0,0,s*.28,0,6.283);x.fill();x.restore()}
+function frame(t){const T=reduce?0:t,home=dim===1;cxp+=((home?.5:.82)-cxp)*.05;al+=(dim-al)*.06;
+ x.clearRect(0,0,W,H);x.globalAlpha=al;x.lineCap='round';
+ const cx=W*cxp,R=Math.min(W*.2,170)*(home?1:.7),N=80,turns=2.4,ph=T/1100+mx*3,pts=[];
+ for(let i=0;i<=N;i++){const u=i/N,a=u*turns*6.283+ph,y=-30+u*(H+60);pts.push({y,u,x1:cx+Math.cos(a)*R,z1:Math.sin(a),x2:cx-Math.cos(a)*R,z2:-Math.sin(a)})}
+ for(let i=0;i<=N;i+=2){const p=pts[i];for(let k=0;k<5;k++){x.strokeStyle=`hsla(${hue(p.u+k*.015,T)},95%,60%,.5)`;x.lineWidth=1.2;x.beginPath();x.moveTo(p.x1,p.y);x.quadraticCurveTo(cx,p.y+10+k*4+Math.sin(T/500+i)*3,p.x2,p.y+k*2);x.stroke()}}
+ for(const s of [1,2])for(let i=1;i<=N;i++){const a=pts[i-1],b=pts[i],z=s===1?b.z1:b.z2;
+  for(let k=-1;k<=1;k++){x.strokeStyle=`hsla(${hue(b.u+k*.01,T)},95%,${55+z*12}%,${.65+z*.3})`;x.lineWidth=2.4+z*1.6;x.beginPath();x.moveTo((s===1?a.x1:a.x2)+k*3,a.y);x.lineTo((s===1?b.x1:b.x2)+k*3,b.y);x.stroke()}}
+ for(let i=4;i<N;i+=9){const p=pts[i],q=pts[i+4];flower(p.x1,p.y,12+p.z1*5,hue(p.u,T)+40);flower(q.x2,q.y,12+q.z2*5,hue(q.u,T)+40)}
+ x.globalAlpha=1;if(SW&&$('#predict').classList.contains('on'))specimen(T);requestAnimationFrame(frame)}
+/* ---- live specimen ---- */
+const sc=$('#spec'),sx=sc.getContext('2d'),MC={idle:[0,229,255],ok:[125,255,107],bad:[255,46,147]};
+let SW=0,SH=0,scanning=false,scanT=0,col=[0,229,255];
+const C=a=>`rgba(${col[0]|0},${col[1]|0},${col[2]|0},${a})`,mp=(v,a,b,c,d)=>c+(v-a)/(b-a)*(d-c);
+const dots=Array.from({length:80},()=>({a:Math.random()*6.283,d:Math.sqrt(Math.random()),s:Math.random()*6}));
+function fitSpec(){const d=Math.min(devicePixelRatio||1,2);SW=sc.clientWidth;SH=sc.clientHeight;sc.width=SW*d;sc.height=SH*d;sx.setTransform(d,0,0,d,0,0)}
+function specimen(T){const tg=MC[tint||'idle'];col.forEach((c,i)=>col[i]+=(tg[i]-c)*.05);
+ const v=read().map((q,i)=>isNaN(q)?F[i].v:q),cx=SW/2,cy=SH/2;sx.clearRect(0,0,SW,SH);
+ sx.strokeStyle=C(.09);sx.lineWidth=1;for(let q=0;q<SW;q+=26){sx.beginPath();sx.moveTo(q,0);sx.lineTo(q,SH);sx.stroke()}for(let q=0;q<SH;q+=26){sx.beginPath();sx.moveTo(0,q);sx.lineTo(SW,q);sx.stroke()}
+ const R=mp(v[0],6,30,28,Math.min(SH*.4,105)),amp=mp(v[4],.05,.17,.8,13),op=mp(v[3],140,2500,.25,.8),hl=mp(v[2],40,190,1,6),nd=mp(v[1],9,40,6,70)|0,pts=[];
+ for(let i=0;i<72;i++){const a=i/72*6.283,r=R*(1+Math.sin(T/1200)*.025)+amp*Math.sin(a*5+T/700)+amp*.6*Math.sin(a*11-T/520);pts.push([cx+Math.cos(a)*r,cy+Math.sin(a)*r])}
+ sx.setLineDash([6,8]);sx.lineDashOffset=-T/60;sx.strokeStyle=C(.6);sx.lineWidth=hl;sx.beginPath();sx.arc(cx,cy,R+amp+14,0,6.283);sx.stroke();sx.setLineDash([]);
+ const g=sx.createRadialGradient(cx,cy,R*.1,cx,cy,R+amp);g.addColorStop(0,C(op));g.addColorStop(1,C(op*.25));
+ sx.beginPath();pts.forEach((p,i)=>i?sx.lineTo(p[0],p[1]):sx.moveTo(p[0],p[1]));sx.closePath();sx.fillStyle=g;sx.fill();
+ sx.strokeStyle=C(1);sx.lineWidth=3;sx.shadowColor=C(1);sx.shadowBlur=18;sx.stroke();sx.shadowBlur=0;
+ for(let i=0;i<nd;i++){const d=dots[i],r=d.d*R*.8,a=d.a+Math.sin(T/1500+d.s)*.15;sx.fillStyle=`rgba(255,255,255,${.25+.3*Math.sin(T/600+d.s)**2})`;sx.beginPath();sx.arc(cx+Math.cos(a)*r,cy+Math.sin(a)*r,1.7,0,6.283);sx.fill()}
+ sx.strokeStyle=C(1);sx.lineWidth=3;[[8,8,1,1],[SW-8,8,-1,1],[8,SH-8,1,-1],[SW-8,SH-8,-1,-1]].forEach(([a,b,dx,dy])=>{sx.beginPath();sx.moveTo(a,b+dy*18);sx.lineTo(a,b);sx.lineTo(a+dx*18,b);sx.stroke()});
+ sx.fillStyle=C(1);sx.font='900 12px Arial';sx.fillText(scanning?'SCANNING…':tint?(tint==='ok'?'BENIGN':'MALIGNANT'):'SPECIMEN-01',18,30);
+ if(scanning&&!reduce){const k=((T-scanT)%1100)/1100,y=k*SH,l=sx.createLinearGradient(0,y-50,0,y);l.addColorStop(0,C(0));l.addColorStop(1,C(.55));sx.fillStyle=l;sx.fillRect(0,y-50,SW,50);sx.fillStyle=C(1);sx.fillRect(0,y,SW,3)}}
+route();requestAnimationFrame(frame);
+</script>
+</body>
+</html>
